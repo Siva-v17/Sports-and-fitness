@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Log In — STACKLY FIT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Manrope:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/SplitText.min.js"></script>
+<style>
+:root{--ink:#0B0D10;--ink2:#14171C;--ink3:#1B1F26;--chalk:#F5F3EE;--mute:#9AA0A6;--signal:#FF5A2B;--signal2:#FFC145;--line:rgba(245,243,238,0.12);--danger:#FF5A5A;--ff-display:'Anton',sans-serif;--ff-body:'Manrope',sans-serif;--ff-mono:'Space Mono',monospace;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--ink);color:var(--chalk);font-family:var(--ff-body);overflow-x:hidden;min-height:100vh;}
+img{max-width:100%;display:block;}
+a{text-decoration:none;color:inherit;}
+button{font-family:inherit;}
+::selection{background:var(--signal);color:var(--ink);}
+
+.auth-wrap{display:grid;grid-template-columns:1fr 1fr;min-height:100vh;}
+.auth-visual{position:relative;overflow:hidden;}
+.auth-visual img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;transform:scale(1.1);}
+.auth-visual::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,13,16,.3),rgba(11,13,16,.92));}
+.auth-visual-content{position:relative;z-index:2;height:100%;display:flex;flex-direction:column;justify-content:space-between;padding:56px;}
+
+/* Logo — fixed height + object-fit so the mark is never stretched or clipped */
+.logo{display:inline-flex;align-items:center;}
+.logo-img{height:50px;width:auto;max-width:180px;object-fit:contain;display:block;}
+.logo span{color:var(--signal);}
+
+/* Logo shown inside the form card, above the Log In / Sign Up tabs. Always visible
+   (not just on mobile) so there's a clear brand mark on the form side at every width. */
+.logo-form{display:flex;margin-bottom:28px;}
+.logo-form .logo-img{height:36px;}
+
+.auth-quote{max-width:400px;}
+.auth-quote p{font-family:var(--ff-display);font-size:clamp(26px,3vw,38px);text-transform:uppercase;line-height:1.1;margin-bottom:16px;}
+.auth-quote span{font-size:13px;color:var(--mute);text-transform:uppercase;letter-spacing:.1em;}
+
+.auth-form-side{display:flex;align-items:center;justify-content:center;padding:60px 40px;position:relative;}
+.auth-card{width:100%;max-width:420px;}
+
+.auth-tabs{position:relative;display:flex;background:var(--ink2);border-radius:100px;padding:5px;margin-bottom:40px;border:1px solid var(--line);overflow:hidden;}
+.auth-tab{flex:1;text-align:center;padding:12px;border-radius:100px;font-family:var(--ff-mono);font-size:12px;text-transform:uppercase;letter-spacing:.1em;cursor:pointer;color:var(--mute);transition:color .3s;position:relative;z-index:2;background:none;border:none;}
+.auth-tab.active{color:var(--ink);}
+.tab-slider{position:absolute;top:5px;left:5px;width:calc(50% - 5px);height:calc(100% - 10px);background:var(--signal);border-radius:100px;transition:transform .4s cubic-bezier(.77,0,.18,1);}
+
+.eyebrow{font-family:var(--ff-mono);font-size:12px;letter-spacing:.25em;color:var(--signal2);text-transform:uppercase;margin-bottom:10px;}
+h1.form-title{font-family:var(--ff-display);font-size:clamp(32px,4vw,44px);text-transform:uppercase;margin-bottom:34px;}
+
+.field{margin-bottom:20px;}
+.field label{display:block;font-family:var(--ff-mono);font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--mute);margin-bottom:8px;}
+.input-shell{position:relative;}
+.field input,.field select{width:100%;background:var(--ink2);border:1px solid var(--line);border-radius:10px;padding:14px 16px;color:var(--chalk);font-family:var(--ff-body);font-size:14px;outline:none;transition:border-color .3s,background .3s;}
+.field input:focus,.field select:focus{border-color:var(--signal);}
+.field input.has-error{border-color:var(--danger);}
+.field select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%239AA0A6' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 16px center;padding-right:40px;}
+.pw-toggle{position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--mute);font-family:var(--ff-mono);font-size:11px;text-transform:uppercase;letter-spacing:.05em;cursor:pointer;padding:4px 6px;}
+.pw-toggle:hover{color:var(--chalk);}
+.error-msg{display:none;font-size:12px;color:var(--danger);margin-top:6px;font-family:var(--ff-mono);}
+.error-msg.show{display:block;}
+
+/* Custom dropdown — replaces the native <select>, whose OS-rendered popup could escape the visible
+   card/frame. This version lives in the normal document flow, so it always stays within the display. */
+.custom-select{position:relative;}
+.custom-select-trigger{width:100%;background:var(--ink2);border:1px solid var(--line);border-radius:10px;padding:14px 16px;color:var(--chalk);font-family:var(--ff-body);font-size:14px;text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;transition:border-color .3s;}
+.custom-select-trigger:focus-visible,.custom-select-trigger.open{border-color:var(--signal);outline:none;}
+.custom-select-trigger .chev{width:10px;height:10px;border-right:2px solid var(--mute);border-bottom:2px solid var(--mute);transform:rotate(45deg);transition:transform .25s;flex-shrink:0;}
+.custom-select-trigger.open .chev{transform:rotate(-135deg);}
+.custom-select-options{list-style:none;position:absolute;left:0;right:0;top:calc(100% + 6px);background:var(--ink2);border:1px solid var(--line);border-radius:10px;max-height:0;overflow-y:auto;opacity:0;pointer-events:none;transition:max-height .25s ease,opacity .2s ease;z-index:20;box-shadow:0 12px 30px rgba(0,0,0,.35);}
+.custom-select-options.open{max-height:200px;opacity:1;pointer-events:auto;}
+.custom-select-options.flip{top:auto;bottom:calc(100% + 6px);}
+.custom-select-options li{padding:12px 16px;font-size:14px;cursor:pointer;transition:background .2s,color .2s;}
+.custom-select-options li:hover,.custom-select-options li.active{background:rgba(255,90,43,.12);color:var(--signal2);}
+.custom-select-options li.selected{color:var(--signal2);}
+
+.role-select{display:flex;gap:10px;}
+.role-opt{flex:1;position:relative;}
+.role-opt input{position:absolute;opacity:0;inset:0;cursor:pointer;margin:0;width:100%;height:100%;}
+.role-opt span{display:block;text-align:center;padding:12px;border:1px solid var(--line);border-radius:10px;cursor:pointer;font-size:13px;text-transform:uppercase;letter-spacing:.05em;transition:.25s;}
+.role-opt input:checked + span{border-color:var(--signal);background:rgba(255,90,43,.1);color:var(--signal2);}
+.role-opt input:focus-visible + span{outline:2px solid var(--signal2);outline-offset:2px;}
+
+.form-meta{display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-bottom:26px;flex-wrap:wrap;gap:10px;}
+.form-meta a{color:var(--signal2);}
+.form-meta a:hover{text-decoration:underline;}
+.remember{display:flex;align-items:center;gap:8px;color:var(--mute);cursor:pointer;}
+.remember input{accent-color:var(--signal);width:15px;height:15px;}
+
+.btn{font-family:var(--ff-body);font-weight:700;font-size:13px;letter-spacing:.05em;text-transform:uppercase;padding:16px 28px;border-radius:100px;display:inline-flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;border:none;width:100%;transition:background .25s,opacity .25s,transform .15s;}
+.btn-fill{background:var(--signal);color:var(--ink);}
+.btn-fill:hover{background:var(--signal2);}
+.btn-fill:active{transform:scale(.98);}
+.btn-fill:disabled{opacity:.6;cursor:not-allowed;transform:none;}
+.spinner{width:14px;height:14px;border-radius:50%;border:2px solid rgba(11,13,16,.3);border-top-color:var(--ink);animation:spin .7s linear infinite;display:none;}
+.btn-fill.loading .spinner{display:inline-block;}
+.btn-fill.loading .btn-label{opacity:.7;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+.divider{display:flex;align-items:center;gap:14px;margin:28px 0;color:var(--mute);font-size:12px;text-transform:uppercase;letter-spacing:.1em;}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--line);}
+.social-row{display:flex;gap:12px;}
+.social-btn{flex:1;padding:13px;border:1px solid var(--line);border-radius:10px;text-align:center;font-size:13px;cursor:pointer;transition:border-color .25s,background .25s;background:none;color:var(--chalk);display:flex;align-items:center;justify-content:center;gap:10px;}
+.social-btn:hover{border-color:var(--signal);}
+.social-btn svg{width:18px;height:18px;flex-shrink:0;}
+
+.switch-text{text-align:center;margin-top:26px;font-size:14px;color:var(--mute);}
+.switch-text a{color:var(--signal2);font-weight:700;}
+.switch-text a:hover{text-decoration:underline;}
+
+.back-home{position:absolute;top:30px;left:40px;z-index:3;font-size:13px;color:var(--mute);display:flex;align-items:center;gap:8px;transition:color .25s;}
+.back-home:hover{color:var(--chalk);}
+
+.toast{position:fixed;top:24px;right:24px;background:var(--ink3);border:1px solid var(--line);border-left:3px solid var(--signal);border-radius:10px;padding:14px 18px;font-size:13px;max-width:320px;z-index:50;transform:translateX(140%);transition:transform .4s cubic-bezier(.77,0,.18,1);}
+.toast.show{transform:translateX(0);}
+.toast.error{border-left-color:var(--danger);}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(11,13,16,.7);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;z-index:100;opacity:0;pointer-events:none;transition:opacity .3s ease;padding:20px;}
+.modal-overlay.show{opacity:1;pointer-events:auto;}
+.modal-box{background:var(--ink3);border:1px solid var(--line);border-radius:20px;padding:44px 36px 36px;max-width:360px;width:100%;text-align:center;transform:scale(.9) translateY(10px);transition:transform .35s cubic-bezier(.34,1.56,.64,1);}
+.modal-overlay.show .modal-box{transform:scale(1) translateY(0);}
+.modal-icon{width:64px;height:64px;border-radius:50%;background:var(--signal);display:flex;align-items:center;justify-content:center;margin:0 auto 22px;}
+.modal-icon.neutral{background:var(--ink2);border:1px solid var(--line);}
+.modal-icon svg{width:26px;height:26px;}
+.modal-box h2{font-family:var(--ff-display);font-size:24px;text-transform:uppercase;letter-spacing:.02em;margin-bottom:14px;}
+.modal-box p{font-size:14px;line-height:1.6;color:var(--mute);margin-bottom:28px;}
+.modal-btn{background:var(--signal);color:var(--ink);font-family:var(--ff-body);font-weight:700;font-size:13px;letter-spacing:.05em;text-transform:uppercase;padding:14px 40px;border-radius:100px;border:none;cursor:pointer;transition:background .25s;width:100%;}
+.modal-btn:hover{background:var(--signal2);}
+.modal-box .field{text-align:left;margin-bottom:10px;}
+
+.form-panel{display:none;}
+.form-panel.active{display:block;}
+
+@media(max-width:900px){
+  .auth-wrap{grid-template-columns:1fr;}
+  .auth-visual{display:none;}
+  .auth-form-side{padding:40px 24px;}
+  .back-home{position:static;margin-bottom:30px;}
+}
+</style>
+</head>
+<body>
+
+<div class="auth-wrap">
+  <div class="auth-visual" aria-hidden="true">
+    <img src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80" alt="">
+    <div class="auth-visual-content">
+      <a href="index.html" class="logo">
+        <!-- <img src="./assets/stackly.png" alt="Stackly Fit" class="logo-img"> -->
+      </a>
+      <div class="auth-quote">
+        <a href="index.html" class="logo">
+          <img src="./assets/stackly.png" alt="Stackly Fit" style="height: 50px; width: 140px;">
+        </a>
+        <p>"Discipline is choosing between what you want now and what you want most."</p>
+        <span>— Stackly Fit Coaching Team</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="auth-form-side">
+    <div class="auth-card">
+      <!-- <a href="index.html" class="back-home">← Back to site</a> -->
+
+      <!-- Logo above the Log In / Sign Up tabs, on the form side. Shown at every screen size. -->
+      <a href="index.html" class="logo logo-form"><img src="./assets/stackly.png" alt="Stackly Fit" class="logo-img" style="height: 50px; width: 120px;"></a>
+
+      <div class="auth-tabs" role="tablist">
+        <div class="tab-slider" id="tabSlider"></div>
+        <button type="button" class="auth-tab active" role="tab" aria-selected="true" data-tab="login">Log In</button>
+        <button type="button" class="auth-tab" role="tab" aria-selected="false" data-tab="signup">Sign Up</button>
+      </div>
+
+      <!-- LOGIN -->
+      <div class="form-panel active" id="loginPanel">
+        <div class="eyebrow">Welcome Back</div>
+        <h1 class="form-title">Log In</h1>
+        <form id="loginForm" novalidate>
+          <div class="field">
+            <label>Log In As</label>
+            <div class="role-select">
+              <label class="role-opt">
+                <input type="radio" name="loginRole" value="member" checked>
+                <span>Member</span>
+              </label>
+              <label class="role-opt">
+                <input type="radio" name="loginRole" value="admin">
+                <span>Admin</span>
+              </label>
+            </div>
+          </div>
+          <div class="field">
+            <label for="loginEmail">Email Address</label>
+            <input type="email" id="loginEmail" placeholder="you@email.com" autocomplete="email" required>
+            <div class="error-msg" id="loginEmailErr">Enter a valid email address.</div>
+          </div>
+          <div class="field">
+            <label for="loginPassword">Password</label>
+            <div class="input-shell">
+              <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password" required minlength="6">
+              <button type="button" class="pw-toggle" data-target="loginPassword">Show</button>
+            </div>
+            <div class="error-msg" id="loginPasswordErr">Password must be at least 6 characters.</div>
+          </div>
+          <div class="form-meta">
+            <label class="remember"><input type="checkbox" id="rememberMe"> Remember me</label>
+            <a href="#" id="forgotLink">Forgot password?</a>
+          </div>
+          <button type="submit" class="btn btn-fill" id="loginBtn">
+            <span class="spinner"></span>
+            <span class="btn-label">Log In</span>
+          </button>
+        </form>
+        <div class="divider">or continue with</div>
+        <div class="social-row">
+          <button type="button" class="social-btn" id="googleBtn" onclick="window.location.href='error.html'">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#4285F4" d="M23.52 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.47c-.28 1.5-1.13 2.77-2.4 3.62v3h3.88c2.27-2.09 3.57-5.17 3.57-8.81z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.07 7.93-2.92l-3.88-3c-1.08.72-2.45 1.15-4.05 1.15-3.11 0-5.75-2.1-6.69-4.92H1.3v3.09C3.26 21.3 7.31 24 12 24z"/><path fill="#FBBC05" d="M5.31 14.31A7.2 7.2 0 0 1 4.91 12c0-.8.14-1.58.4-2.31V6.6H1.3A11.97 11.97 0 0 0 0 12c0 1.93.46 3.76 1.3 5.4l4.01-3.09z"/><path fill="#EA4335" d="M12 4.77c1.76 0 3.35.61 4.6 1.8l3.44-3.44C17.94 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.3 6.6l4.01 3.09C6.25 6.87 8.89 4.77 12 4.77z"/></svg>
+            Google
+          </button>
+          <button type="button" class="social-btn" id="appleBtn" onclick="window.location.href='error.html'">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M17.05 12.54c-.02-2.13 1.74-3.16 1.82-3.21-1-1.46-2.55-1.66-3.1-1.68-1.32-.13-2.58.78-3.25.78-.67 0-1.7-.76-2.8-.74-1.44.02-2.77.84-3.51 2.13-1.5 2.6-.38 6.46 1.07 8.57.71 1.03 1.56 2.19 2.67 2.15 1.07-.04 1.48-.69 2.78-.69 1.3 0 1.66.69 2.79.67 1.16-.02 1.89-1.05 2.6-2.09.82-1.2 1.15-2.36 1.17-2.42-.03-.01-2.24-.86-2.26-3.4z"/><path fill="currentColor" d="M14.98 6.19c.59-.72 1-1.72.89-2.72-.86.04-1.9.58-2.51 1.29-.55.63-1.03 1.66-.9 2.63.94.08 1.9-.48 2.52-1.2z"/></svg>
+            Apple
+          </button>
+        </div>
+        <p class="switch-text"><a href="index.html">← Back to site</a></a></p>
+      </div>
+
+      <!-- SIGNUP -->
+      <div class="form-panel" id="signupPanel">
+        <div class="eyebrow">Join The Studio</div>
+        <h1 class="form-title">Create Account</h1>
+        <form id="signupForm" novalidate>
+          <div class="field">
+            <label for="signupName">Full Name</label>
+            <input type="text" id="signupName" placeholder="Your name" autocomplete="name" required>
+            <div class="error-msg" id="signupNameErr">Please enter your name.</div>
+          </div>
+          <div class="field">
+            <label for="signupEmail">Email Address</label>
+            <input type="email" id="signupEmail" placeholder="you@email.com" autocomplete="email" required>
+            <div class="error-msg" id="signupEmailErr">Enter a valid email address.</div>
+          </div>
+          <div class="field">
+            <label for="signupPassword">Password</label>
+            <div class="input-shell">
+              <input type="password" id="signupPassword" placeholder="Create a password" autocomplete="new-password" required minlength="6">
+              <button type="button" class="pw-toggle" data-target="signupPassword">Show</button>
+            </div>
+            <div class="error-msg" id="signupPasswordErr">Password must be at least 6 characters.</div>
+          </div>
+          <div class="field">
+            <label for="signupConfirmPassword">Confirm Password</label>
+            <div class="input-shell">
+              <input type="password" id="signupConfirmPassword" placeholder="Re-enter your password" autocomplete="new-password" required minlength="6">
+              <button type="button" class="pw-toggle" data-target="signupConfirmPassword">Show</button>
+            </div>
+            <div class="error-msg" id="signupConfirmPasswordErr">Passwords do not match.</div>
+          </div>
+          <div class="field">
+            <label id="signupGoalLabel">Primary Goal</label>
+            <div class="custom-select" id="goalSelect">
+              <button type="button" class="custom-select-trigger" id="goalTrigger" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="signupGoalLabel">
+                <span id="goalSelectedText">Build Strength</span>
+                <span class="chev"></span>
+              </button>
+              <ul class="custom-select-options" id="goalOptions" role="listbox" tabindex="-1">
+                <li role="option" aria-selected="true" data-value="Build Strength" class="selected">Build Strength</li>
+                <li role="option" aria-selected="false" data-value="Lose Weight">Lose Weight</li>
+                <li role="option" aria-selected="false" data-value="Improve Endurance">Improve Endurance</li>
+                <li role="option" aria-selected="false" data-value="General Fitness">General Fitness</li>
+              </ul>
+            </div>
+            <input type="hidden" id="signupGoal" value="Build Strength">
+          </div>
+          <button type="submit" class="btn btn-fill" id="signupBtn">
+            <span class="spinner"></span>
+            <span class="btn-label">Create Account</span>
+          </button>
+        </form>
+        <div class="divider">or continue with</div>
+        <div class="social-row">
+          <button type="button" class="social-btn" id="googleBtnSignup" onclick="window.location.href='error.html'">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#4285F4" d="M23.52 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.47c-.28 1.5-1.13 2.77-2.4 3.62v3h3.88c2.27-2.09 3.57-5.17 3.57-8.81z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.07 7.93-2.92l-3.88-3c-1.08.72-2.45 1.15-4.05 1.15-3.11 0-5.75-2.1-6.69-4.92H1.3v3.09C3.26 21.3 7.31 24 12 24z"/><path fill="#FBBC05" d="M5.31 14.31A7.2 7.2 0 0 1 4.91 12c0-.8.14-1.58.4-2.31V6.6H1.3A11.97 11.97 0 0 0 0 12c0 1.93.46 3.76 1.3 5.4l4.01-3.09z"/><path fill="#EA4335" d="M12 4.77c1.76 0 3.35.61 4.6 1.8l3.44-3.44C17.94 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.3 6.6l4.01 3.09C6.25 6.87 8.89 4.77 12 4.77z"/></svg>
+            Google
+          </button>
+          <button type="button" class="social-btn" id="appleBtnSignup" onclick="window.location.href='error.html'">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M17.05 12.54c-.02-2.13 1.74-3.16 1.82-3.21-1-1.46-2.55-1.66-3.1-1.68-1.32-.13-2.58.78-3.25.78-.67 0-1.7-.76-2.8-.74-1.44.02-2.77.84-3.51 2.13-1.5 2.6-.38 6.46 1.07 8.57.71 1.03 1.56 2.19 2.67 2.15 1.07-.04 1.48-.69 2.78-.69 1.3 0 1.66.69 2.79.67 1.16-.02 1.89-1.05 2.6-2.09.82-1.2 1.15-2.36 1.17-2.42-.03-.01-2.24-.86-2.26-3.4z"/><path fill="currentColor" d="M14.98 6.19c.59-.72 1-1.72.89-2.72-.86.04-1.9.58-2.51 1.29-.55.63-1.03 1.66-.9 2.63.94.08 1.9-.48 2.52-1.2z"/></svg>
+            Apple
+          </button>
+        </div>
+        <p class="switch-text">Already a member? <a href="#" data-switch="login">Log in</a></p>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Generic confirmation modal (signup success, etc.) -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <div class="modal-icon">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4 12.5L9.5 18L20 6" stroke="#0B0D10" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <h2 id="modalTitle">You're In!</h2>
+    <p id="modalMessage">Message goes here.</p>
+    <button type="button" class="modal-btn" id="modalBtn">Got It</button>
+  </div>
+</div>
+
+<!-- Forgot password modal: email step, then confirmation step -->
+<div class="modal-overlay" id="forgotModalOverlay">
+  <div class="modal-box">
+    <div id="forgotStepEmail">
+      <div class="modal-icon neutral">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="3" y="5" width="18" height="14" rx="2" stroke="#FFC145" stroke-width="2"/>
+          <path d="M3 6.5L12 13L21 6.5" stroke="#FFC145" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <h2>Reset Password</h2>
+      <p>Enter the email linked to your account and we'll send you a link to reset your password.</p>
+      <div class="field">
+        <label for="forgotEmail">Email Address</label>
+        <input type="email" id="forgotEmail" placeholder="you@email.com" autocomplete="email">
+        <div class="error-msg" id="forgotEmailErr">Enter a valid email address.</div>
+      </div>
+      <button type="button" class="modal-btn" id="forgotSubmitBtn">Send Reset Link</button>
+    </div>
+    <div id="forgotStepSuccess" style="display:none;">
+      <div class="modal-icon">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M4 12.5L9.5 18L20 6" stroke="#0B0D10" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <h2>Check Your Email</h2>
+      <p id="forgotSuccessMsg">If an account exists, a password reset link is on its way to your inbox.</p>
+      <button type="button" class="modal-btn" id="forgotDoneBtn">Got It</button>
+    </div>
+  </div>
+</div>
+
+<script>
+gsap.registerPlugin(SplitText);
+
+window.addEventListener('load', () => {
+  gsap.from('.auth-card', {opacity: 0, y: 30, duration: .9, ease: 'power3.out'});
+  gsap.to('.auth-visual img', {scale: 1, duration: 2, ease: 'power3.out'});
+  try {
+    const split = new SplitText('.auth-quote p', {type: 'lines'});
+    gsap.set(split.lines, {opacity: 0, y: 20});
+    gsap.to(split.lines, {opacity: 1, y: 0, duration: .8, stagger: .1, delay: .4, ease: 'power3.out'});
+  } catch (e) { /* SplitText unavailable, ignore gracefully */ }
+
+  // Prefill remembered email
+  const remembered = localStorage.getItem('stacklyfit_remember_email');
+  if (remembered) {
+    document.getElementById('loginEmail').value = remembered;
+    document.getElementById('rememberMe').checked = true;
+  }
+});
+
+/* ---------- Tabs ---------- */
+const tabs = document.querySelectorAll('.auth-tab');
+const slider = document.getElementById('tabSlider');
+const panels = {login: document.getElementById('loginPanel'), signup: document.getElementById('signupPanel')};
+
+function switchTab(name) {
+  tabs.forEach(t => {
+    const active = t.dataset.tab === name;
+    t.classList.toggle('active', active);
+    t.setAttribute('aria-selected', active);
+  });
+  slider.style.transform = name === 'signup' ? 'translateX(100%)' : 'translateX(0)';
+  Object.entries(panels).forEach(([k, el]) => el.classList.toggle('active', k === name));
+  gsap.from(panels[name], {opacity: 0, y: 14, duration: .5, ease: 'power3.out'});
+}
+tabs.forEach(t => t.addEventListener('click', () => switchTab(t.dataset.tab)));
+document.querySelectorAll('[data-switch]').forEach(a => a.addEventListener('click', e => {
+  e.preventDefault();
+  switchTab(a.dataset.switch);
+}));
+
+/* ---------- Password show/hide ---------- */
+document.querySelectorAll('.pw-toggle').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const input = document.getElementById(btn.dataset.target);
+    const isPw = input.type === 'password';
+    input.type = isPw ? 'text' : 'password';
+    btn.textContent = isPw ? 'Hide' : 'Show';
+  });
+});
+
+/* ---------- Custom "Primary Goal" dropdown ----------
+   Renders in normal document flow (not an OS-level popup), and flips upward
+   automatically if there isn't enough room below — so it always stays within
+   the visible card/frame instead of spilling outside it. */
+const goalSelect = document.getElementById('goalSelect');
+const goalTrigger = document.getElementById('goalTrigger');
+const goalOptions = document.getElementById('goalOptions');
+const goalSelectedText = document.getElementById('goalSelectedText');
+const goalHiddenInput = document.getElementById('signupGoal');
+
+function openGoalDropdown() {
+  // Decide whether to open downward or upward based on remaining viewport space
+  const triggerRect = goalTrigger.getBoundingClientRect();
+  const estimatedHeight = Math.min(200, goalOptions.children.length * 44);
+  const spaceBelow = window.innerHeight - triggerRect.bottom;
+  goalOptions.classList.toggle('flip', spaceBelow < estimatedHeight + 12);
+
+  goalOptions.classList.add('open');
+  goalTrigger.classList.add('open');
+  goalTrigger.setAttribute('aria-expanded', 'true');
+}
+function closeGoalDropdown() {
+  goalOptions.classList.remove('open');
+  goalTrigger.classList.remove('open');
+  goalTrigger.setAttribute('aria-expanded', 'false');
+}
+goalTrigger.addEventListener('click', () => {
+  const isOpen = goalOptions.classList.contains('open');
+  isOpen ? closeGoalDropdown() : openGoalDropdown();
+});
+goalOptions.querySelectorAll('li').forEach(li => {
+  li.addEventListener('click', () => {
+    goalOptions.querySelectorAll('li').forEach(o => {
+      o.classList.remove('selected');
+      o.setAttribute('aria-selected', 'false');
+    });
+    li.classList.add('selected');
+    li.setAttribute('aria-selected', 'true');
+    goalSelectedText.textContent = li.dataset.value;
+    goalHiddenInput.value = li.dataset.value;
+    closeGoalDropdown();
+  });
+});
+document.addEventListener('click', e => {
+  if (!goalSelect.contains(e.target)) closeGoalDropdown();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeGoalDropdown();
+});
+window.addEventListener('resize', closeGoalDropdown);
+
+/* ---------- Generic modal (signup success) ---------- */
+const modalOverlay = document.getElementById('modalOverlay');
+const modalTitle = document.getElementById('modalTitle');
+const modalMessage = document.getElementById('modalMessage');
+const modalBtn = document.getElementById('modalBtn');
+let modalOnClose = null;
+
+function showModal(title, message, onClose) {
+  modalTitle.textContent = title;
+  modalMessage.textContent = message;
+  modalOnClose = typeof onClose === 'function' ? onClose : null;
+  modalOverlay.classList.add('show');
+}
+function hideModal() {
+  modalOverlay.classList.remove('show');
+  if (modalOnClose) { modalOnClose(); modalOnClose = null; }
+}
+modalBtn.addEventListener('click', hideModal);
+modalOverlay.addEventListener('click', e => { if (e.target === modalOverlay) hideModal(); });
+
+function showToast(msg, type = 'info') {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.className = 'toast show' + (type === 'error' ? ' error' : '');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => toast.classList.remove('show'), 3200);
+}
+
+/* ---------- Validation helpers ---------- */
+function setError(input, errEl, show) {
+  input.classList.toggle('has-error', show);
+  if (errEl) errEl.classList.toggle('show', show);
+}
+function isValidEmail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+
+/* ---------- Login ---------- */
+const loginForm = document.getElementById('loginForm');
+const loginBtn = document.getElementById('loginBtn');
+
+loginForm.addEventListener('submit', e => {
+  e.preventDefault();
+  const emailEl = document.getElementById('loginEmail');
+  const pwEl = document.getElementById('loginPassword');
+  const email = emailEl.value.trim();
+  const password = pwEl.value;
+  const role = document.querySelector('input[name="loginRole"]:checked').value;
+
+  let valid = true;
+  const emailOk = isValidEmail(email);
+  setError(emailEl, document.getElementById('loginEmailErr'), !emailOk);
+  if (!emailOk) valid = false;
+
+  const pwOk = password.length >= 6;
+  setError(pwEl, document.getElementById('loginPasswordErr'), !pwOk);
+  if (!pwOk) valid = false;
+
+  if (!valid) {
+    showToast('Please fix the highlighted fields.', 'error');
+    return;
+  }
+
+  const remember = document.getElementById('rememberMe').checked;
+  if (remember) localStorage.setItem('stacklyfit_remember_email', email);
+  else localStorage.removeItem('stacklyfit_remember_email');
+
+  loginBtn.classList.add('loading');
+  loginBtn.disabled = true;
+
+  const session = {email, role, loggedInAt: Date.now()};
+  sessionStorage.setItem('stacklyfit_user', JSON.stringify(session));
+
+  // Simulated auth delay — swap for a real API call when the backend is ready
+  setTimeout(() => {
+    gsap.to('.auth-card', {
+      opacity: 0, y: -20, duration: .5, ease: 'power2.in',
+      onComplete: () => {
+        window.location.href = role === 'admin' ? 'admin-dashboard.html' : 'user-dashboard.html';
+      }
+    });
+  }, 600);
+});
+
+/* ---------- Signup ---------- */
+const signupForm = document.getElementById('signupForm');
+const signupBtn = document.getElementById('signupBtn');
+
+signupForm.addEventListener('submit', e => {
+  e.preventDefault();
+  const nameEl = document.getElementById('signupName');
+  const emailEl = document.getElementById('signupEmail');
+  const pwEl = document.getElementById('signupPassword');
+  const confirmPwEl = document.getElementById('signupConfirmPassword');
+
+  let valid = true;
+
+  const nameOk = nameEl.value.trim().length > 1;
+  setError(nameEl, document.getElementById('signupNameErr'), !nameOk);
+  if (!nameOk) valid = false;
+
+  const emailOk = isValidEmail(emailEl.value.trim());
+  setError(emailEl, document.getElementById('signupEmailErr'), !emailOk);
+  if (!emailOk) valid = false;
+
+  const pwOk = pwEl.value.length >= 6;
+  setError(pwEl, document.getElementById('signupPasswordErr'), !pwOk);
+  if (!pwOk) valid = false;
+
+  const confirmOk = pwOk && confirmPwEl.value === pwEl.value && confirmPwEl.value.length > 0;
+  setError(confirmPwEl, document.getElementById('signupConfirmPasswordErr'), !confirmOk);
+  if (!confirmOk) valid = false;
+
+  if (!valid) {
+    showToast('Please fix the highlighted fields.', 'error');
+    return;
+  }
+
+  signupBtn.classList.add('loading');
+  signupBtn.disabled = true;
+
+  const session = {
+    email: emailEl.value.trim(),
+    name: nameEl.value.trim(),
+    role: 'member',
+    goal: document.getElementById('signupGoal').value,
+    createdAt: Date.now()
+  };
+  localStorage.setItem('stacklyfit_account', JSON.stringify(session));
+
+  setTimeout(() => {
+    signupBtn.classList.remove('loading');
+    signupBtn.disabled = false;
+    signupForm.reset();
+    showModal(
+      "You're In!",
+      `Thanks for joining, ${session.name.split(' ')[0]} — your Stackly Fit account is ready.`,
+      () => {
+        switchTab('login');
+        document.getElementById('loginEmail').value = session.email;
+      }
+    );
+  }, 600);
+});
+
+/* ---------- Forgot password (email step -> confirmation step) ---------- */
+const forgotModalOverlay = document.getElementById('forgotModalOverlay');
+const forgotStepEmail = document.getElementById('forgotStepEmail');
+const forgotStepSuccess = document.getElementById('forgotStepSuccess');
+const forgotEmailInput = document.getElementById('forgotEmail');
+const forgotEmailErr = document.getElementById('forgotEmailErr');
+const forgotSuccessMsg = document.getElementById('forgotSuccessMsg');
+const forgotSubmitBtn = document.getElementById('forgotSubmitBtn');
+const forgotDoneBtn = document.getElementById('forgotDoneBtn');
+
+function openForgotModal() {
+  forgotStepEmail.style.display = '';
+  forgotStepSuccess.style.display = 'none';
+  forgotEmailInput.value = document.getElementById('loginEmail').value.trim();
+  setError(forgotEmailInput, forgotEmailErr, false);
+  forgotModalOverlay.classList.add('show');
+  setTimeout(() => forgotEmailInput.focus(), 50);
+}
+function closeForgotModal() {
+  forgotModalOverlay.classList.remove('show');
+}
+function submitForgotEmail() {
+  const email = forgotEmailInput.value.trim();
+  const ok = isValidEmail(email);
+  setError(forgotEmailInput, forgotEmailErr, !ok);
+  if (!ok) return;
+
+  // Simulated request — swap for a real password-reset API call when the backend is ready
+  forgotSuccessMsg.textContent = `If an account exists for ${email}, a password reset link is on its way to your inbox.`;
+  forgotStepEmail.style.display = 'none';
+  forgotStepSuccess.style.display = '';
+}
+
+document.getElementById('forgotLink').addEventListener('click', e => {
+  e.preventDefault();
+  openForgotModal();
+});
+forgotSubmitBtn.addEventListener('click', submitForgotEmail);
+forgotEmailInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); submitForgotEmail(); }
+});
+forgotDoneBtn.addEventListener('click', closeForgotModal);
+forgotModalOverlay.addEventListener('click', e => { if (e.target === forgotModalOverlay) closeForgotModal(); });
+
+document.getElementById('googleBtn').addEventListener('click', () => showToast('Google sign-in coming soon.'));
+document.getElementById('appleBtn').addEventListener('click', () => showToast('Apple sign-in coming soon.'));
+document.getElementById('googleBtnSignup').addEventListener('click', () => showToast('Google sign-in coming soon.'));
+document.getElementById('appleBtnSignup').addEventListener('click', () => showToast('Apple sign-in coming soon.'));
+</script>
+</body>
+</html>
